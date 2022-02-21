@@ -1,0 +1,31 @@
+---
+title: "Group Project 2"
+author: "Erica Fossee"
+date: "2/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Open data and check variable types, NAs
+```{r}
+hotel<-read.csv("hotel_bookings.csv", stringsAsFactors = TRUE)
+str(hotel)
+hotel$reservation_status_date<- as.Date(hotel$reservation_status_date)
+str(hotel)
+```
+The following variables can be made into factors:  is_canceled, is_repeated_guest
+```{r}
+hotel$is_canceled<-as.factor(hotel$is_canceled)
+hotel$is_repeated_guest<-as.factor(hotel$is_repeated_guest)
+str(hotel)
+summary(hotel)
+```
+The following columns had NAs: children. We will assume they have no kids. 
+```{r}
+hotel$children<-ifelse(is.na(hotel$children), 0, hotel$children)
+```
+
