@@ -33,7 +33,7 @@ hotel$children<-ifelse(is.na(hotel$children), 0, hotel$children)
 
 summary(hotel$children)
 
-
+summary(hotel$children)
 #Will's Edits
 
 summary(hotel$is_canceled)
