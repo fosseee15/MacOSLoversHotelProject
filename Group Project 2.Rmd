@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#Will Edits Test #1
 
 Open data and check variable types, NAs
 ```{r}
@@ -29,3 +30,8 @@ The following columns had NAs: children. We will assume they have no kids.
 hotel$children<-ifelse(is.na(hotel$children), 0, hotel$children)
 ```
 
+summary(hotel$children)
+
+#Will's Edits
+
+summary(hotel$is_canceled)
