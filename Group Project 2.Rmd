@@ -9,31 +9,113 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Will Edits Test #1
-
 Open data and check variable types, NAs
 ```{r}
 hotel<-read.csv("hotel_bookings.csv", stringsAsFactors = TRUE)
-str(hotel)
-summary(hotel)
-hotel$reservation_status_date<- as.Date(hotel$reservation_status_date)
-str(hotel)
+#hotel$reservation_status_date<- as.Date(hotel$reservation_status_date)
 ```
 The following variables can be made into factors:  is_canceled, is_repeated_guest
 ```{r}
 hotel$is_canceled<-as.factor(hotel$is_canceled)
 hotel$is_repeated_guest<-as.factor(hotel$is_repeated_guest)
-str(hotel)
-summary(hotel)
 ```
 The following columns had NAs: children. We will assume they have no kids. 
 ```{r}
 hotel$children<-ifelse(is.na(hotel$children), 0, hotel$children)
 ```
 
-summary(hotel$children)
+The following descriptive analyses were done to get a better sense of the data. A new column called "cancelednumeric" was created to convert the prediction variable (is_canceled) to numeric.
+```{r}
+summary(hotel)
+str(hotel)
+hotel$cancelednumeric<-as.numeric(hotel$is_canceled)
+hotel$cancelednumeric<-ifelse(hotel$cancelednumeric=="1",0,1)
 
-summary(hotel$children)
-#Will's Edits
+table(hotel$arrival_date_month)
+table(hotel$children)
+hist(hotel$children)
+tapply(hotel$cancelednumeric, hotel$hotel, mean, na.rm = TRUE)
+hist(hotel$arrival_date_day_of_month)
+tapply(hotel$children, hotel$cancelednumeric, mean, na.rm = TRUE)
+tapply(hotel$lead_time, hotel$is_canceled, mean, na.rm = TRUE)
+tapply(hotel$cancelednumeric, hotel$adults, mean, na.rm = TRUE)
+table(hotel$customer_type)
+table(hotel$customer_type, hotel$distribution_channel)
+tapply(hotel$cancelednumeric, hotel$customer_type, mean, na.rm = TRUE)
+table(hotel$is_canceled, hotel$reservation_status)
+table(hotel$cancelednumeric, hotel$previous_cancellations)
+table(hotel$is_canceled, hotel$is_repeated_guest)
+table(hotel$is_canceled, hotel$deposit_type)
+table(hotel$is_canceled, hotel$agent)
+table(hotel$arrival_date_year)
+tapply(hotel$cancelednumeric, hotel$arrival_date_month, mean, na.rm = TRUE)
+```
+July and August had the most cancellations, December and January had the least cancellations
+More cancellations for city hotels (42%) compared to resort hotels (28%)
+There is a drop in hotel arrival date at the end of the month
+Bookings made further in advance had more cancellations than bookings made sooner
+Parties with more adults were more likely to cancel
+Most reservations were made by TA/TO (travel agency)
+Groups were least likely to cancel and transient parties were most likely to cancel
+Much more cancellations for non-refundable deposits- possibly due to another variable impacting relationship or hotel purposefully giving customers who are likely to cancel a non refundable option
+People with more cancellations were more likely to cancel than not cancel
+Possibly want to remove the column about customer type or only look at transient parties 
+Remove the reservation_status column because this includes the prediction outcome 
+Possibly want to predict cancelled, no show, and checked out; or remove no show or remove canceled 
 
-summary(hotel$is_canceled)
+
+Decrease the number of factor levels for the following variables:country, agent, company, date (?)
+
+agent
+Top 10: PRT, GBR, FRA, ESP, DEU, ITA, IRL, BEL, BRA, NLD
+```{r}
+levels(hotel$country)
+levels(hotel$country) <- c(levels(hotel$country),"OTHER")
+sort(table(hotel$country), decreasing = T)[1:10]
+hotel$country_new<-hotel$country
+hotel$country_new[hotel$country!="PRT" & hotel$country!="GBR" & hotel$country!="FRA" & hotel$country!="ESP" & hotel$country!="DEU" & hotel$country!="ITA" & hotel$country!="IRL" & hotel$country!="BEL" & hotel$country!="BRA" & hotel$country!="NLD"]<-"OTHER"
+hotel$country<-hotel$country_new
+hotel$country<-droplevels(hotel$country)
+hotel$country_new<-NULL
+```
+
+Agent
+```{r}
+levels(hotel$agent)
+levels(hotel$agent) <- c(levels(hotel$agent),"OTHER")
+sort(table(hotel$agent), decreasing = T)[1:10]
+hotel$agent_new<-hotel$agent
+hotel$agent_new[hotel$agent!="9" & hotel$agent!="NULL" & hotel$agent!="240" & hotel$agent!="1" & hotel$agent!="14" & hotel$agent!="7" & hotel$agent!="6" & hotel$agent!="250" & hotel$agent!="241" & hotel$agent!="28"]<-"OTHER"
+table(hotel$agent_new)
+hotel$agent <- hotel$agent_new
+hotel$agent<-droplevels(hotel$agent)
+hotel$agent_new<-NULL
+```
+
+Company
+NULL 40 223 67 45 153 174 219 281 154
+```{r}
+levels(hotel$company)
+levels(hotel$company) <- c(levels(hotel$company),"OTHER")
+sort(table(hotel$company), decreasing = T)[1:10]
+hotel$company_new<-hotel$company
+hotel$company_new[hotel$company!="NULL" & hotel$company!="40" & hotel$company!="223" & hotel$company!="67" & hotel$company!="45" & hotel$company!="153" & hotel$company!="174" & hotel$company!="219" & hotel$company!="281" & hotel$company!="154"]<-"OTHER"
+table(hotel$company_new)
+hotel$company<-hotel$company_new
+hotel$company_new<-NULL
+hotel$company<-droplevels(hotel$company)
+
+
+```
+
+Reservation Date
+Split into month, day, year
+```{r}
+library(lubridate)
+hotel$res_year <- year(ymd(hotel$reservation_status_date))
+hotel$res_month <- month(ymd(hotel$reservation_status_date)) 
+hotel$res_day <- day(ymd(hotel$reservation_status_date))
+hotel$reservation_status_date<-NULL
+hotel$res_year<-as.factor(hotel$res_year)
+hotel$res_day<-as.factor(hotel$res_day)
+hotel$res_month<-as.factor(hotel$res_month)
