@@ -18,6 +18,7 @@ The following variables can be made into factors:  is_canceled, is_repeated_gues
 ```{r}
 hotel$is_canceled<-as.factor(hotel$is_canceled)
 hotel$is_repeated_guest<-as.factor(hotel$is_repeated_guest)
+hotel$totalstay <- hotel$stays_in_week_nights + hotel$stays_in_weekend_nights
 ```
 The following columns had NAs: children. We will assume they have no kids. 
 ```{r}
@@ -30,7 +31,6 @@ summary(hotel)
 str(hotel)
 hotel$cancelednumeric<-as.numeric(hotel$is_canceled)
 hotel$cancelednumeric<-ifelse(hotel$cancelednumeric=="1",0,1)
-
 table(hotel$arrival_date_month)
 table(hotel$children)
 hist(hotel$children)
@@ -104,8 +104,6 @@ table(hotel$company_new)
 hotel$company<-hotel$company_new
 hotel$company_new<-NULL
 hotel$company<-droplevels(hotel$company)
-
-
 ```
 
 Reservation Date
@@ -119,3 +117,59 @@ hotel$reservation_status_date<-NULL
 hotel$res_year<-as.factor(hotel$res_year)
 hotel$res_day<-as.factor(hotel$res_day)
 hotel$res_month<-as.factor(hotel$res_month)
+```
+
+
+Models
+```{}
+Hypothesis: 
+-Hotel Type
+-Lead Time
+-Arrival Date Month
+-Week Night Stay
+-Weekend Stay
+-Total Nights
+-Adults
+-Children
+-Babies
+-Country
+-Market Segment
+-Reserved Room Type
+-Deposit Type
+-Customer Type
+-adr
+
+deposit_type*reserved_room_type: Got a bunch of NAs for some of the interaction types
+```
+
+#Test&Train Data set
+```{r}
+# Selects 10000 random rows for test data
+set.seed(12345)
+test_set <- sample(1:nrow(hotel), 20000) 
+# Depending on R-version and computer, different rows may be selected. 
+# If that happens, results are different. 
+
+# Create a train set and test set
+#First the predictors - all columns except the yyes column
+hotel_train <- hotel[-test_set, -match("is_canceled",names(hotel))]
+hotel_test <- hotel[test_set, -match("is_canceled",names(hotel))]
+
+hotel_train1 <- hotel[-test_set, ]
+hotel_test1 <- hotel[test_set, ]
+
+#Now the response (aka Labels) - only the yyes column
+hotel_train_labels <- hotel[-test_set, "is_canceled"]
+hotel_test_labels <- hotel[test_set, "is_canceled"]
+```
+
+```{r}
+LGModel1 <- glm(is_canceled ~ hotel + lead_time + arrival_date_month + stays_in_weekend_nights + stays_in_week_nights + adults + children + babies + market_segment + reserved_room_type + deposit_type + customer_type + adr + hotel*arrival_date_month + adr*deposit_type, data = hotel_train1, family = "binomial")
+summary(LGModel1)
+
+library(class)
+library(caret)
+prediction <- predict(LGModel1, newdata = hotel_test, type = "response")
+prediction <- ifelse(prediction > 0.5, 1, 0)
+confusionMatrix(as.factor(prediction), as.factor(hotel_test_labels), positive = "1")
+```
